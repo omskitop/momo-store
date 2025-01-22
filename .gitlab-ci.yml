@@ -14,8 +14,6 @@ build_backend:
     - cd backend
     - docker build -t $BACKEND_IMAGE .
     - docker push $BACKEND_IMAGE
-  only:
-    - master
 
 build_frontend:
   stage: build
@@ -26,5 +24,3 @@ build_frontend:
     - cd frontend
     - docker build -t $FRONTEND_IMAGE .
     - docker push $FRONTEND_IMAGE
-  only:
-    - master
