@@ -2,25 +2,44 @@ stages:
   - build
 
 variables:
-  BACKEND_IMAGE: $CI_REGISTRY_IMAGE/momo-store-backend
-  FRONTEND_IMAGE: $CI_REGISTRY_IMAGE/momo-store-frontend
+  VERSION: 1.0.${CI_PIPELINE_ID}
+  NODE_ENV: production
+  VUE_APP_API_URL: http://localhost:8081
 
-build_backend:
+build-backend:
   stage: build
-  image: docker:latest
-  services:
-    - docker:dind
+  rules:
+    - changes:
+        - backend/**/*
+      when: always
+    - when: manual
+  image:
+    name: gcr.io/kaniko-project/executor:v1.20.1-debug
+    entrypoint: [""]
   script:
-    - cd backend
-    - docker build -t $BACKEND_IMAGE .
-    - docker push $BACKEND_IMAGE
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}/backend"
+      --dockerfile "${CI_PROJECT_DIR}/backend/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}/momo-store-backend:$VERSION"
+      --build-arg VERSION=$VERSION
+      --cache=true
 
-build_frontend:
+build-frontend:
   stage: build
-  image: docker:latest
-  services:
-    - docker:dind
+  rules:
+    - changes:
+        - frontend/**/*
+      when: always
+    - when: manual
+  image:
+    name: gcr.io/kaniko-project/executor:v1.20.1-debug
+    entrypoint: [""]
   script:
-    - cd frontend
-    - docker build -t $FRONTEND_IMAGE .
-    - docker push $FRONTEND_IMAGE
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}/frontend"
+      --dockerfile "${CI_PROJECT_DIR}/frontend/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}/momo-store-frontend:$VERSION"
+      --build-arg VERSION=$VERSION
+      --build-arg NODE_ENV=$NODE_ENV
+      --build-arg VUE_APP_API_URL=$VUE_APP_API_URL
+      --cache=true
