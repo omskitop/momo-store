@@ -1,7 +1,6 @@
-version: '3.8'
-
 services:
   backend:
+    image: backend:latest
     ports:
       - "8081:8081"
 
@@ -11,3 +10,6 @@ services:
       - "8080:80"
     depends_on:
       - backend
+    environment:
+      - NODE_ENV=production
+      - VUE_APP_API_URL=http://backend:8081
