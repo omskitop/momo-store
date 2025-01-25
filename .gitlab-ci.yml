@@ -1,81 +1,22 @@
 stages:
-  - build
-  - test
-  - release
+  - module-pipelines
 
-variables:
-  VERSION: 1.0.${CI_PIPELINE_ID}
-  NODE_ENV: production
-  VUE_APP_API_URL: http://localhost:8081
+backend:
+  stage: module-pipelines
+  trigger:
+    include:
+      - 'backend/.gitlab-ci.yml'
+    strategy: depend
+  only:
+    changes:
+      - backend/**/*
 
-build-backend:
-  stage: build
-  rules:
-    - changes:
-        - backend/**/*
-      when: always
-    - when: manual
-  image:
-    name: gcr.io/kaniko-project/executor:v1.20.1-debug
-    entrypoint: [""]
-  script:
-    - /kaniko/executor
-      --context "${CI_PROJECT_DIR}/backend"
-      --dockerfile "${CI_PROJECT_DIR}/backend/Dockerfile"
-      --destination "${CI_REGISTRY_IMAGE}/momo-store-backend:$VERSION"
-      --build-arg VERSION=$VERSION
-      --cache=true
-
-build-frontend:
-  stage: build
-  rules:
-    - changes:
-        - frontend/**/*
-      when: always
-    - when: manual
-  image:
-    name: gcr.io/kaniko-project/executor:v1.20.1-debug
-    entrypoint: [""]
-  script:
-    - /kaniko/executor
-      --context "${CI_PROJECT_DIR}/frontend"
-      --dockerfile "${CI_PROJECT_DIR}/frontend/Dockerfile"
-      --destination "${CI_REGISTRY_IMAGE}/momo-store-frontend:$VERSION"
-      --build-arg VERSION=$VERSION
-      --build-arg NODE_ENV=$NODE_ENV
-      --build-arg VUE_APP_API_URL=$VUE_APP_API_URL
-      --cache=true
-
-test-backend-go:
-  stage: test
-  image: golang:1.20
-  needs:
-    - build-backend
-  script:
-    - cd backend && go test -v ./...
-
-include:
-  - template: Jobs/SAST.gitlab-ci.yml
-
-release-backend:
-  stage: release
-  needs:
-    - semgrep-sast
-    - test-backend-go
-  image:
-    name: gcr.io/go-containerregistry/crane:debug
-    entrypoint: [""]
-  script:
-    - crane auth login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - crane tag ${CI_REGISTRY_IMAGE}/momo-store-backend:$VERSION latest
-
-release-frontend:
-  stage: release
-  needs:
-    - nodejs-scan-sast
-  image:
-    name: gcr.io/go-containerregistry/crane:debug
-    entrypoint: [""]
-  script:
-    - crane auth login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - crane tag ${CI_REGISTRY_IMAGE}/momo-store-frontend:$VERSION latest
+frontend:
+  stage: module-pipelines
+  trigger:
+    include:
+      - 'frontend/.gitlab-ci.yml'
+    strategy: depend
+  only:
+    changes:
+      - frontend/**/*

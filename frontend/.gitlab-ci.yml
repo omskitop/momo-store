@@ -1,0 +1,43 @@
+stages:
+  - build
+  - test
+  - release
+
+variables:
+  VERSION: 1.0.${CI_PIPELINE_ID}
+  NODE_ENV: production
+  VUE_APP_API_URL: http://localhost:8081
+
+build-frontend:
+  stage: build
+  rules:
+    - changes:
+        - frontend/**/*
+      when: always
+    - when: manual
+  image:
+    name: gcr.io/kaniko-project/executor:v1.20.1-debug
+    entrypoint: [""]
+  script:
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}/frontend"
+      --dockerfile "${CI_PROJECT_DIR}/frontend/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}/momo-store-frontend:$VERSION"
+      --build-arg VERSION=$VERSION
+      --build-arg NODE_ENV=$NODE_ENV
+      --build-arg VUE_APP_API_URL=$VUE_APP_API_URL
+      --cache=true
+
+include:
+  - template: Jobs/SAST.gitlab-ci.yml
+
+release-frontend:
+  stage: release
+  needs:
+    - nodejs-scan-sast
+  image:
+    name: gcr.io/go-containerregistry/crane:debug
+    entrypoint: [""]
+  script:
+    - crane auth login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - crane tag ${CI_REGISTRY_IMAGE}/momo-store-frontend:$VERSION latest
