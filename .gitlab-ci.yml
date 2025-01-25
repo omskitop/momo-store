@@ -1,5 +1,6 @@
 stages:
   - build
+  - release
 
 variables:
   VERSION: 1.0.${CI_PIPELINE_ID}
@@ -43,3 +44,25 @@ build-frontend:
       --build-arg NODE_ENV=$NODE_ENV
       --build-arg VUE_APP_API_URL=$VUE_APP_API_URL
       --cache=true
+
+backend-release:
+  stage: release
+  needs:
+    - build-backend
+  image:
+    name: gcr.io/go-containerregistry/crane:debug
+    entrypoint: [""]
+  script:
+    - crane auth login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - crane tag ${CI_REGISTRY_IMAGE}/momo-store-backend:$VERSION latest
+
+frontend-release:
+  stage: release
+  needs:
+    - build-frontend
+  image:
+    name: gcr.io/go-containerregistry/crane:debug
+    entrypoint: [""]
+  script:
+    - crane auth login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - crane tag ${CI_REGISTRY_IMAGE}/momo-store-backend:$VERSION latest
