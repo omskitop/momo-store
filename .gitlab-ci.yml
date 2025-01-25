@@ -1,6 +1,10 @@
 stages:
   - build
+  - test
   - release
+
+include:
+  - template: Jobs/SAST.gitlab-ci.yml
 
 variables:
   VERSION: 1.0.${CI_PIPELINE_ID}
@@ -45,10 +49,26 @@ build-frontend:
       --build-arg VUE_APP_API_URL=$VUE_APP_API_URL
       --cache=true
 
-backend-release:
-  stage: release
+sast:
+  stage: test
   needs:
     - build-backend
+    - build-frontend
+  allow_failure: false
+  artifacts:
+    reports:
+      sast: gl-sast-report.json
+    paths:
+      - gl-sast-report.json
+    expire_in: 7 days
+  script:
+    - echo "Running SAST tests..."
+    - cat gl-sast-report.json || echo "SAST report not found."
+
+release-backend:
+  stage: release
+  needs:
+    - semgrep-sast
   image:
     name: gcr.io/go-containerregistry/crane:debug
     entrypoint: [""]
@@ -56,10 +76,10 @@ backend-release:
     - crane auth login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - crane tag ${CI_REGISTRY_IMAGE}/momo-store-backend:$VERSION latest
 
-frontend-release:
+release-frontend:
   stage: release
   needs:
-    - build-frontend
+    - nodejs-scan-sast
   image:
     name: gcr.io/go-containerregistry/crane:debug
     entrypoint: [""]
