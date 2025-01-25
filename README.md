@@ -15,3 +15,18 @@ NODE_ENV=production VUE_APP_API_URL=http://localhost:8081 npm run serve
 go run ./cmd/api
 go test -v ./... 
 ```
+
+## Docker build&run
+
+### Backend
+```bash
+cd backend
+docker build -t backend .
+docker run -p 8081:8081 backend
+```
+### Frontend
+```bash
+cd frontend
+docker build -t frontend .
+docker run -p 8080:8080 -e NODE_ENV=production -e VUE_APP_API_URL=http://localhost:8081 frontend
+```
