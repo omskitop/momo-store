@@ -21,12 +21,12 @@ go test -v ./...
 ### Backend
 ```bash
 cd backend
-docker build -t momo-store-backend .
-docker run -p 8081:8081 momo-store-backend
+docker build -t backend .
+docker run -p 8081:8081 backend
 ```
 ### Frontend
 ```bash
 cd frontend
-docker build -t momo-store-frontend .
-docker run -p 8080:8080 -e NODE_ENV=production -e VUE_APP_API_URL=http://localhost:8081 momo-store-frontend
+docker build -t frontend .
+docker run -p 8080:8080 -e NODE_ENV=production -e VUE_APP_API_URL=http://localhost:8081 frontend
 ```
