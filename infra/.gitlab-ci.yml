@@ -1,9 +1,5 @@
 stages:
   - create-k8s-cluster
-  - deploy-helm-app
-
-variables:
-  CLUSTER_NAME: "k8s-momo-store-cluster"
 
 terraform:
   stage: create-k8s-cluster
@@ -14,13 +10,3 @@ terraform:
   only:
     changes:
       - infra/terraform/**/*
-
-helm:
-  stage: deploy-helm-app
-  trigger:
-    include:
-      - "/infra/helm/.gitlab-ci.yml"
-    strategy: depend
-  only:
-    changes:
-      - infra/helm/**/*
