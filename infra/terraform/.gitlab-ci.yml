@@ -10,6 +10,7 @@ stages:
   - cleanup
 
 variables:
+  IGNORE_TF_DEPRECATION_WARNING: "true"
   TF_CLI_CONFIG_FILE: ${CI_PROJECT_DIR}/infra/terraform/.terraformrc
   TF_ROOT: ${CI_PROJECT_DIR}/infra/terraform/
   TF_STATE_NAME: momo-store${CI_ENVIRONMENT_NAME}
