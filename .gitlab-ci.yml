@@ -20,3 +20,13 @@ frontend:
   only:
     changes:
       - frontend/**/*
+
+infra:
+  stage: module-pipelines
+  trigger:
+    include:
+      - "/infra/.gitlab-ci.yml"
+    strategy: depend
+  only:
+    changes:
+      - infra/**/*
