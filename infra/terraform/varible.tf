@@ -18,13 +18,13 @@ variable "zone" {
 
 variable "cluster_name" {
   type        = string
-  default = "k8s-momo-store-cluster"
+  default = "k8s-cluster-momo-store"
   description = "Name of cluster"
 }
 
 variable "k8s_version" {
   type        = number
-  default = "1.27"
+  default = "1.29"
   description = "Version of k8s"
 }
 

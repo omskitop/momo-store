@@ -31,13 +31,13 @@ resource "yandex_kubernetes_node_group" "k8s-node-group" {
     }
 
     resources {
-      memory = var.node_memory # RAM quantity in GB
-      cores  = var.node_core # Number of CPU cores
+      memory = var.node_memory
+      cores  = var.node_core
     }
 
     boot_disk {
       type = var.node_disk_type
-      size = var.node_disk_size # Disk size in GB
+      size = var.node_disk_size
     }
   }
 }

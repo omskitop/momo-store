@@ -14,11 +14,11 @@ variables:
   TF_CLI_CONFIG_FILE: ${CI_PROJECT_DIR}/infra/terraform/.terraformrc
   TF_ROOT: ${CI_PROJECT_DIR}/infra/terraform/
   TF_STATE_NAME: momo-store${CI_ENVIRONMENT_NAME}
-  YC_TOKEN: ${TF_YC_TOKEN}
-  TF_VAR_cloud_id: ${TF_CLOUD_ID}
-  TF_VAR_folder_id: ${TF_FOLDER_ID}
-  AWS_ACCESS_KEY_ID: ${TF_BUCKET_ID}
-  AWS_SECRET_ACCESS_KEY: ${TF_BUCKET_KEY}
+  YC_TOKEN: ${YC_TOKEN}
+  TF_VAR_cloud_id: ${YC_CLOUD_ID}
+  TF_VAR_folder_id: ${YC_FOLDER_ID}
+  AWS_ACCESS_KEY_ID: ${YC_BUCKET_KEY_ID}
+  AWS_SECRET_ACCESS_KEY: ${YC_BUCKET_ACCESS_KEY}
   TF_VAR_cluster_name: ${CLUSTER_NAME}
 
 validate:

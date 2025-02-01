@@ -1,18 +1,39 @@
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# Test binary, built with `go test -c`
-*.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
-
-# Dependency directories (remove the comment below to include it)
-vendor/
-.idea/
-.vscode/
+# System files (macOS, Windows, etc.)
 .DS_Store
+Thumbs.db
+
+# IDE and editor directories and settings
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Temporary files, logs, and caches
+*.log
+logs/
+*.tmp
+*.swp
+
+# Build directories and compiled artifacts
+bin/
+obj/
+build/
+out/
+target/
+
+# Terraform files
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.tfplan
+# Note: Do NOT ignore .terraform.lock.hcl as it should be committed
+
+# Node.js modules and debug logs
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Backup files
+*.bak
