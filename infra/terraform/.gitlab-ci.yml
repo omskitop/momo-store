@@ -1,0 +1,55 @@
+include:
+  - template: Terraform/Base.gitlab-ci.yml
+  - template: Jobs/SAST-IaC.latest.gitlab-ci.yml
+
+stages:
+  - validate
+  - test
+  - build
+  - deploy
+  - cleanup
+
+variables:
+  IGNORE_TF_DEPRECATION_WARNING: "true"
+  TF_CLI_CONFIG_FILE: ${CI_PROJECT_DIR}/infra/terraform/.terraformrc
+  TF_ROOT: ${CI_PROJECT_DIR}/infra/terraform/
+  TF_STATE_NAME: momo-store${CI_ENVIRONMENT_NAME}
+  YC_SERVICE_ACCOUNT_KEY_FILE: /tmp/sa-key.json
+  TF_VAR_cloud_id: ${YC_CLOUD_ID}
+  TF_VAR_folder_id: ${YC_FOLDER_ID}
+  AWS_ACCESS_KEY_ID: ${YC_BUCKET_KEY_ID}
+  AWS_SECRET_ACCESS_KEY: ${YC_BUCKET_ACCESS_KEY}
+  TF_VAR_cluster_name: ${CLUSTER_NAME}
+
+before_script:
+  - echo $YC_KEY > /tmp/sa-key.json
+
+validate:
+  extends: .terraform:validate
+
+build:
+  extends: .terraform:build
+
+deploy:
+  extends: .terraform:deploy
+  environment:
+    name: $TF_STATE_NAME
+
+cleanup:
+  extends: .terraform:destroy
+  stage: cleanup
+  environment:
+    name: $TF_STATE_NAME
+    action: stop
+
+terraform_apply:
+  needs:
+    - build
+  stage: deploy
+  resource_group: ${TF_STATE_NAME}
+  environment:
+    name: $TF_STATE_NAME
+    action: start
+  script:
+    - gitlab-terraform apply
+  when: manual

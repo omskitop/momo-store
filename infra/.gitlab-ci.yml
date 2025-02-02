@@ -1,0 +1,12 @@
+stages:
+  - create-k8s-cluster
+
+terraform:
+  stage: create-k8s-cluster
+  trigger:
+    include:
+      - "/infra/terraform/.gitlab-ci.yml"
+    strategy: depend
+  only:
+    changes:
+      - infra/terraform/**/*
