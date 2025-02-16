@@ -1,45 +1,41 @@
 stages:
-  - build
   - test
+  - build
   - release
 
 variables:
   VERSION: 1.0.${CI_PIPELINE_ID}
   SAST_EXCLUDED_ANALYZERS: "nodejs-scan"
 
-build-backend:
-  stage: build
-  rules:
-    - changes:
-        - backend/**/*
-      when: always
-    - when: manual
-  image:
-    name: gcr.io/kaniko-project/executor:v1.20.1-debug
-    entrypoint: [""]
-  script:
-    - /kaniko/executor
-      --dockerfile "${CI_PROJECT_DIR}/backend/Dockerfile"
-      --destination "${CI_REGISTRY_IMAGE}/momo-store-backend:$VERSION"
-      --build-arg VERSION=$VERSION
-      --cache=true
-
 test-backend-go:
   stage: test
   image: golang:1.20
-  needs:
-    - build-backend
   script:
     - cd backend && go test -v ./...
 
 include:
   - template: Jobs/SAST.gitlab-ci.yml
 
-release-backend:
+build-backend-docker:
+  stage: build
+  needs:
+  - semgrep-sast
+  - test-backend-go
+  image:
+    name: gcr.io/kaniko-project/executor:v1.20.1-debug
+    entrypoint: [""]
+  script:
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/backend/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}/momo-store-backend:$VERSION"
+      --build-arg VERSION=$VERSION
+      --cache=true
+
+release-backend-docker:
   stage: release
   needs:
-    - semgrep-sast
-    - test-backend-go
+    - build-backend-docker
   image:
     name: gcr.io/go-containerregistry/crane:debug
     entrypoint: [""]
