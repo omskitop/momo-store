@@ -3,6 +3,7 @@ import { parse } from 'cookie';
 
 // Используем относительный путь для API, чтобы запросы шли через Nginx-прокси
 axios.defaults.baseURL = '/api';
+
 class ApiService {
 
   static csrf_token: string;
