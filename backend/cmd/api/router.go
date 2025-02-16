@@ -26,7 +26,8 @@ func newRouter(app *app.Instance) (http.Handler, error) {
 		corses.Handler,
 	)
 
-	r.Group(func(r chi.Router) {
+	// Группируем все API-эндпоинты под префиксом /api
+	r.Route("/api", func(r chi.Router) {
 		r.Use(
 			app.TimingsMiddleware,
 			app.RequestsMiddleware,
@@ -39,6 +40,7 @@ func newRouter(app *app.Instance) (http.Handler, error) {
 		r.Get("/auth/whoami", app.WhoAmIController)
 	})
 
+	// Эндпоинты для здоровья и метрик оставляем на корне
 	r.Get("/health", app.HealthcheckController)
 	r.Method(http.MethodGet, "/metrics", app.MetricsHandler())
 

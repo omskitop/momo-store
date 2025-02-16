@@ -1,8 +1,6 @@
 module.exports = {
   devServer: {
-    disableHostCheck: true
+    disableHostCheck: true // Рекомендуется отключить в продакшене, если не нужно
   },
-  publicPath: process.env.NODE_ENV === 'production'
-    ? '/'
-    : '/'
+  publicPath: '/'
 };

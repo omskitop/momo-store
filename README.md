@@ -2,34 +2,34 @@
 
 <img width="900" alt="image" src="https://user-images.githubusercontent.com/9394918/167876466-2c530828-d658-4efe-9064-825626cc6db5.png">
 
-## Frontend
-
+---
+## Docker 
+Execute from root directory:
 ```bash
-npm install
-NODE_ENV=production VUE_APP_API_URL=http://localhost:8081 npm run serve
+#build&run
+docker network create momo-store-net && \
+docker build -t momo-store-backend-1 -f backend/Dockerfile . && \
+docker run -d --rm -p 8081:8081 --network momo-store-net --name momo-store-backend-1 momo-store-backend-1 && \
+docker build -t momo-store-frontend-1 -f frontend/Dockerfile . && \
+docker run -d --rm -p 8080:8080 --network momo-store-net --name momo-store-frontend-1 momo-store-frontend-1
+#see result at http://localhost:8080
 ```
-
-## Backend
-
 ```bash
-go run ./cmd/api
-go test -v ./... 
+#stop&cleanup
+docker stop momo-store-backend-1 momo-store-frontend-1 && \
+docker network remove momo-store-net
 ```
-
-# Docker build&run
-
-### Backend
+Or use docker compose from root directory:
 ```bash
-cd backend
-docker build -t backend .
-docker run -p 8081:8081 backend
+#build&run
+docker compose up -d
+#see result at http://localhost:8080
 ```
-### Frontend
 ```bash
-cd frontend
-docker build -t frontend .
-docker run -p 8080:8080 -e NODE_ENV=production -e VUE_APP_API_URL=http://localhost:8081 frontend
+#stop&cleanup
+docker compose down
 ```
+---
 
 # K8S cluster creation
 
