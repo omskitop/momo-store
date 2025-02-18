@@ -1,3 +1,4 @@
+```bash
 # Установка ingress-nginx
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx && \
 helm repo update && \
@@ -33,3 +34,4 @@ helm uninstall cert-manager -n cert-managerer && \
 kubectl delete ns cert-manager
 
 helm uninstall momo-store-chart
+```
