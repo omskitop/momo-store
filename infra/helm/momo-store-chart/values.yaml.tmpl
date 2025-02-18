@@ -92,7 +92,7 @@ frontend:
         pathType: Prefix
         service: momo-store-backend
         port: 8081
-        # Обработка статики и SPA
+      # Обработка статики и SPA
       - path: /  # Захватываем весь путь после / (аналогично try_files $uri $uri/ /index.html)
         pathType: Prefix
         service: momo-store-frontend  # Имя сервиса (без префикса)
