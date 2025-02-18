@@ -1,0 +1,5 @@
+apiVersion: v2
+type: application
+name: backend
+description: momo store backend helm chart
+version: 1.0.0

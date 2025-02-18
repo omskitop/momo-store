@@ -1,0 +1,5 @@
+apiVersion: v2
+type: application
+name: frontend
+description: momo-store helm chart for frontend
+version: 1.0.0

@@ -1,0 +1,58 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.partOf }}-{{ .Values.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.partOf }}-{{ .Values.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.Version }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ .Values.partOf }}-{{ .Chart.Name }}-{{ .Chart.Version }}
+    app.kubernetes.io/component: {{ .Values.name }}
+    app.kubernetes.io/part-of: {{ .Values.partOf }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: {{ .Values.deployStrategy.type }}
+    rollingUpdate:
+      maxSurge: {{ .Values.deployStrategy.maxSurge }}
+      maxUnavailable: {{ .Values.deployStrategy.maxUnavailable }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.partOf }}-{{ .Values.name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Values.partOf }}-{{ .Values.name }}
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8081"
+        prometheus.io/scrape: "true"
+    spec:
+      containers:
+        - name: {{ .Values.partOf }}-{{ .Values.name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: {{ .Values.name }}-ports
+              containerPort: {{ .Values.containerPort }}
+          resources:
+            requests:
+              memory: "{{ .Values.resources.requests.memory }}"
+              cpu: "{{ .Values.resources.requests.cpu }}"
+            limits:
+              memory: "{{ .Values.resources.limits.memory }}"
+              cpu: "{{ .Values.resources.limits.cpu }}"
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.httpGet.path }}
+              port: {{ .Values.livenessProbe.httpGet.port }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+      imagePullSecrets:
+        - name: {{ .Values.dockerconfigjson.name }}

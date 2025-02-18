@@ -1,0 +1,13 @@
+apiVersion: v2
+type: application
+name: momo-store-chart
+description: A Helm chart for deploy momo-store to k8s
+version: 1.0.0
+appVersion: latest
+dependencies:
+- name: backend
+  version: 1.0.0
+  repository: file://charts/backend
+- name: frontend
+  version: 1.0.0
+  repository: file://charts/frontend

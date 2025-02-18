@@ -1,0 +1,132 @@
+backend:
+  name: backend
+  partOf: "momo-store"
+  image:
+    repository: "gitlab.praktikum-services.ru:5050/std-032-63/momo-store/momo-store-backend"
+    tag: "latest"
+    pullPolicy: Always
+  replicaCount: 2
+  deployStrategy:
+    type: RollingUpdate
+    maxSurge: "50%"
+    maxUnavailable: 1
+  revisionHistoryLimit: 12
+  containerPort: 8081
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "0.25"
+    limits:
+      memory: "512Mi"
+      cpu: "1"
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8081
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 2
+    failureThreshold: 4
+  service:
+    type: ClusterIP
+    port: 8081
+    protocol: TCP
+    targetPort: 8081
+  dockerconfigjson:
+    name: gitlab-image-token-backend
+    data: "${DOCKER_CONFIG_JSON}"
+
+frontend:
+  name: frontend
+  partOf: "momo-store"
+  image:
+    repository: "gitlab.praktikum-services.ru:5050/std-032-63/momo-store/momo-store-frontend"
+    tag: latest
+    pullPolicy: Always
+  replicaCount: 2
+  deployStrategy:
+    type: RollingUpdate
+    maxSurge: "50%"
+    maxUnavailable: 1
+  revisionHistoryLimit: 12
+  containerPort: 8080
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "0.05"
+    limits:
+      memory: "256Mi"
+      cpu: "0.5"
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 1
+    failureThreshold: 3
+  service:
+    type: ClusterIP
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  ingress:
+    className: "nginx"  # Должен соответствовать существующему Ingress Class
+    fqdn: "omskitop.ru"  # Доменное имя
+    tls:
+      enabled: true
+      secretName: "omskitop-ru-tls"  # Существующий Secret с TLS-сертификатом
+      clusterIssuer:
+        enabled: true
+        email: "omskitop@ya.ru"  # Email для Let's Encrypt
+        server: "https://acme-v02.api.letsencrypt.org/directory"
+    annotations:  # Аннотации для контроллера (например, Nginx)
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/hsts: "max-age=31536000; includeSubDomains"
+      nginx.ingress.kubernetes.io/proxy-connect-timeout: "5"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+    paths:
+      # Проксирование API
+      - path: /api/  # Все пути, начинающиеся с /api/
+        pathType: Prefix
+        service: momo-store-backend
+        port: 8081
+        # Обработка статики и SPA
+      - path: /  # Захватываем весь путь после / (аналогично try_files $uri $uri/ /index.html)
+        pathType: Prefix
+        service: momo-store-frontend  # Имя сервиса (без префикса)
+        port: 8080
+  envs:
+    nginx.conf: |
+      events {
+          worker_connections 768;
+      }
+
+      http {
+          include       mime.types;
+          default_type  application/octet-stream;
+
+          server {
+              listen 8080;
+
+              location / {
+                  root   /usr/share/nginx/html;
+                  index  index.html;
+                  try_files $uri $uri/ /index.html;
+              }
+
+              location /api/ {
+                  proxy_pass http://momo-store-backend:8081;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_connect_timeout 5s;
+                  proxy_read_timeout 30s;
+              }
+          }
+      }
+  dockerconfigjson:
+    name: gitlab-image-token-frontend
+    data: ${DOCKER_CONFIG_JSON}
