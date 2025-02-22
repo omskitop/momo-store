@@ -22,7 +22,7 @@ upload-chart:
   script:
     - cd ${CHART_DIR}
     - helm package .
-    - curl -u ${NEXUS_USER}:${NEXUS_PASSWORD} --upload-file *.tgz "${NEXUS_HELM_REPO_URL}"
+    - curl -u ${NEXUS_USER}:${NEXUS_PASSWORD} --upload-file *.tgz "${NEXUS_REPO_URL}${NEXUS_REPO_NAME}"
 
 deploy-infrastructure:
   stage: deploy
