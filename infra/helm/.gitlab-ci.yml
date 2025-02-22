@@ -29,6 +29,9 @@ deploy-infrastructure:
   when: manual
   environment: production
   script:
+    - mkdir -p ~/.kube
+    - echo "$KUBECONFIG" | base64 -d > ~/.kube/config
+    - export KUBECONFIG=~/.kube/config
     - |
       helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
       --namespace ingress-nginx \
@@ -49,6 +52,9 @@ deploy-application:
   needs: 
     - "upload-chart"
   script:
+    - mkdir -p ~/.kube
+    - echo "$KUBECONFIG" | base64 -d > ~/.kube/config
+    - export KUBECONFIG=~/.kube/config
     - cd ${CHART_DIR}
     - |
       envsubst '
