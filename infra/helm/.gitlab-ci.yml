@@ -12,6 +12,15 @@ image:
   entrypoint: [""]
 
 before_script:
+  - curl -f -s -LO https://storage.yandexcloud.net/yandexcloud-yc/install.sh
+  - bash install.sh -i /usr/local/yandex-cloud -n
+  - ln -s /usr/local/yandex-cloud/bin/yc /usr/local/bin/yc
+  - echo ${YC_KEY} > /tmp/sa-key.json
+  - yc config profile create sa-profile
+  - yc config set service-account-key /tmp/sa-key.json
+  - yc config set cloud-id ${YC_CLOUD_ID}
+  - yc config set folder-id ${YC_FOLDER_ID}
+  - yc managed-kubernetes cluster get-credentials ${CLUSTER_NAME} --external
   - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
   - helm repo add jetstack https://charts.jetstack.io
   - helm repo add ${NEXUS_REPO_NAME} ${NEXUS_REPO_URL}/${NEXUS_REPO_NAME} --username ${NEXUS_USER} --password ${NEXUS_PASSWORD}
@@ -52,9 +61,6 @@ deploy-application:
   needs: 
     - "upload-chart"
   script:
-    - mkdir -p ~/.kube
-    - echo "$KUBECONFIG" | base64 -d > ~/.kube/config
-    - export KUBECONFIG=~/.kube/config
     - cd ${CHART_DIR}
     - |
       envsubst '
@@ -64,6 +70,6 @@ deploy-application:
         $ADMIN_EMAIL
         $DOCKER_CONFIG_JSON
       ' < values.yaml.tmpl > values.yaml
-    - helm upgrade --install ${APP_CHART_NAME} ${NEXUS_REPO_NAME}/${APP_CHART_NAME} -f values.yaml
+    - helm upgrade --install --atomic ${APP_CHART_NAME} ${NEXUS_REPO_NAME}/${APP_CHART_NAME} -f values.yaml
     - echo "External IP для ingress:"
     - kubectl get svc -n ingress-nginx -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}'
