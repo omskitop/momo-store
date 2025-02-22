@@ -71,3 +71,6 @@ deploy-application:
       ${APP_CHART_NAME} ${NEXUS_REPO_NAME}/${APP_CHART_NAME} -f values.yaml
     - echo "External IP для ingress:"
     - kubectl get svc -n ingress-nginx -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}'
+    - echo "FQDN для ingress:"
+    - echo ${FQDN}
+    - echo "Полученный IP необходимо прописать в A-запись DNS-сервера, чтобы запросы к домену успешно обрабатывались ingress-nginx"
