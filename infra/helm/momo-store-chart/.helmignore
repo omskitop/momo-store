@@ -23,5 +23,9 @@
 .vscode/
 # Ci-cd pipelines
 .gitlab-ci*
-# subchart values
+# values
 values.yaml
+# helm packages
+*.tgz
+
+.env

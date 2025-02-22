@@ -1,5 +1,6 @@
 stages:
   - create-k8s-cluster
+  - deploy-app-via-helm
 
 terraform:
   stage: create-k8s-cluster
@@ -10,3 +11,13 @@ terraform:
   only:
     changes:
       - infra/terraform/**/*
+
+helm:
+  stage: deploy-app-via-helm
+  trigger:
+    include:
+      - "/infra/helm/.gitlab-ci.yml"
+    strategy: depend
+  only:
+    changes:
+      - infra/helm/**/*

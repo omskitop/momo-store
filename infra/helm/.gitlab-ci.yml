@@ -1,0 +1,63 @@
+stages:
+  - prepare
+  - deploy
+
+variables:
+  APP_CHART_NAME: "momo-store-chart"
+  NEXUS_REPO_NAME: "momo-store-helm-std-032-63"
+  CHART_DIR: "infra/helm/${APP_CHART_NAME}"
+
+image:
+  name: alpine/k8s:1.29.13
+  entrypoint: [""]
+
+before_script:
+  - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+  - helm repo add jetstack https://charts.jetstack.io
+  - helm repo add ${NEXUS_REPO_NAME} ${NEXUS_REPO_URL}/${NEXUS_REPO_NAME} --username ${NEXUS_USER} --password ${NEXUS_PASSWORD}
+  - helm repo update
+
+upload-chart:
+  stage: prepare
+  script:
+    - cd ${CHART_DIR}
+    - helm package .
+    - curl -u ${NEXUS_USER}:${NEXUS_PASSWORD} --upload-file *.tgz "${NEXUS_HELM_REPO_URL}"
+
+deploy-infrastructure:
+  stage: deploy
+  when: manual
+  environment: production
+  script:
+    - |
+      helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+      --namespace ingress-nginx \
+      --create-namespace \
+      --version 4.12.0 \
+      --set controller.service.type=LoadBalancer \
+      --set controller.image.tag="v1.12.0" \
+      --set controller.service.annotations."yandex\.cloud/load-balancer-type"=external
+    - |
+      helm upgrade --install cert-manager jetstack/cert-manager \
+      --namespace cert-manager \
+      --create-namespace \
+      --version v1.17.1 \
+      --set installCRDs=true
+
+deploy-application:
+  stage: deploy
+  needs: 
+    - "upload-chart"
+  script:
+    - cd ${CHART_DIR}
+    - |
+      envsubst '
+        $DOCKER_REPO_BACKEND
+        $DOCKER_REPO_FRONTEND
+        $FQDN
+        $ADMIN_EMAIL
+        $DOCKER_CONFIG_JSON
+      ' < values.yaml.tmpl > values.yaml
+    - helm upgrade --install ${APP_CHART_NAME} ${NEXUS_REPO_NAME}/${APP_CHART_NAME} -f values.yaml
+    - echo "External IP для ingress:"
+    - kubectl get svc -n ingress-nginx -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}'
