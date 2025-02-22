@@ -21,6 +21,7 @@ before_script:
   - yc config set cloud-id ${YC_CLOUD_ID}
   - yc config set folder-id ${YC_FOLDER_ID}
   - yc managed-kubernetes cluster get-credentials ${CLUSTER_NAME} --external
+  - export KUBECONFIG=/root/.kube/config
   - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
   - helm repo add jetstack https://charts.jetstack.io
   - helm repo add ${NEXUS_REPO_NAME} ${NEXUS_REPO_URL}/${NEXUS_REPO_NAME} --username ${NEXUS_USER} --password ${NEXUS_PASSWORD}
@@ -35,12 +36,8 @@ upload-chart:
 
 deploy-infrastructure:
   stage: deploy
-  when: manual
   environment: production
   script:
-    - mkdir -p ~/.kube
-    - echo "$KUBECONFIG" | base64 -d > ~/.kube/config
-    - export KUBECONFIG=~/.kube/config
     - |
       helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
       --namespace ingress-nginx \
@@ -59,7 +56,8 @@ deploy-infrastructure:
 deploy-application:
   stage: deploy
   needs: 
-    - "upload-chart"
+    - upload-chart
+    - deploy-infrastructure
   script:
     - cd ${CHART_DIR}
     - |
