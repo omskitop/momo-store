@@ -1,6 +1,7 @@
 stages:
-  - prepare
-  - deploy
+  - release-chart
+  - deploy-infra
+  - deploy-app
 
 variables:
   APP_CHART_NAME: "momo-store-chart"
@@ -28,14 +29,14 @@ before_script:
   - helm repo update
 
 upload-chart:
-  stage: prepare
+  stage: release-chart
   script:
     - cd ${CHART_DIR}
     - helm package .
     - curl -u ${NEXUS_USER}:${NEXUS_PASSWORD} --upload-file *.tgz "${NEXUS_REPO_URL}${NEXUS_REPO_NAME}"
 
 deploy-infrastructure:
-  stage: deploy
+  stage: deploy-infra
   environment: production
   script:
     - |
@@ -51,13 +52,10 @@ deploy-infrastructure:
       --namespace cert-manager \
       --create-namespace \
       --version v1.17.1 \
-      --set installCRDs=true
+      --set crds.enabled=true
 
 deploy-application:
-  stage: deploy
-  needs: 
-    - upload-chart
-    - deploy-infrastructure
+  stage: deploy-app
   script:
     - cd ${CHART_DIR}
     - |
@@ -68,6 +66,8 @@ deploy-application:
         $ADMIN_EMAIL
         $DOCKER_CONFIG_JSON
       ' < values.yaml.tmpl > values.yaml
-    - helm upgrade --install --atomic ${APP_CHART_NAME} ${NEXUS_REPO_NAME}/${APP_CHART_NAME} -f values.yaml
+    - |
+      helm upgrade --install --atomic --namespace momo-store --create-namespace \
+      ${APP_CHART_NAME} ${NEXUS_REPO_NAME}/${APP_CHART_NAME} -f values.yaml
     - echo "External IP для ingress:"
     - kubectl get svc -n ingress-nginx -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}'
