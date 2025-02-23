@@ -80,6 +80,7 @@ deploy-application:
 
 deploy-prometheus:
   stage: deploy-monitoring
+  when: manual
   script:
     - cd infra/helm/monitoring-tools/prometheus
     - cat values.yaml.tmpl | envsubst > values.yaml
@@ -87,6 +88,7 @@ deploy-prometheus:
 
 deploy-grafana:
   stage: deploy-monitoring
+  when: manual
   script:
     - cd infra/helm/monitoring-tools/grafana
     - cat values.yaml.tmpl | envsubst > values.yaml
