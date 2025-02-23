@@ -1,0 +1,6 @@
+ingress:
+  className: "nginx"
+  fqdn: "grafana.${FQDN}"
+  tls:
+    enabled: true
+    secretName: "grafana-tls"

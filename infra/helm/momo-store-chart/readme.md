@@ -29,10 +29,10 @@ kubectl get svc -n ingress-nginx -o jsonpath='{.items[0].status.loadBalancer.ing
 # Полученный IP необходимо прописать в A-запись DNS-сервера, чтобы запросы к домену успешно обрабатывались ingress-nginx
 
 # Удаление
-helm uninstall ingress-nginx -n ingress-nginx && \
+helm uninstall ingress-nginx --namespace ingress-nginx && \
 kubectl delete ns ingress-nginx
 
-helm uninstall cert-manager -n cert-manager && \
+helm uninstall cert-manager --namespace cert-manager && \
 kubectl delete ns cert-manager
 
 helm uninstall momo-store-chart

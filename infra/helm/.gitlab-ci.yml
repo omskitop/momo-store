@@ -1,7 +1,8 @@
 stages:
   - release-chart
-  - deploy-infra
   - deploy-app
+  - deploy-monitoring
+
 
 variables:
   APP_CHART_NAME: "momo-store-chart"
@@ -26,6 +27,8 @@ before_script:
   - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
   - helm repo add jetstack https://charts.jetstack.io
   - helm repo add ${NEXUS_REPO_NAME} ${NEXUS_REPO_URL}/${NEXUS_REPO_NAME} --username ${NEXUS_USER} --password ${NEXUS_PASSWORD}
+  - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+  - helm repo add grafana https://grafana.github.io/helm-charts
   - helm repo update
 
 upload-chart:
@@ -36,8 +39,8 @@ upload-chart:
     - curl -u ${NEXUS_USER}:${NEXUS_PASSWORD} --upload-file *.tgz "${NEXUS_REPO_URL}${NEXUS_REPO_NAME}"
 
 deploy-infrastructure:
-  stage: deploy-infra
-  environment: production
+  stage: deploy-app
+  when: manual
   script:
     - |
       helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
@@ -74,3 +77,17 @@ deploy-application:
     - echo "FQDN для ingress:"
     - echo ${FQDN}
     - echo "Полученный IP необходимо прописать в A-запись DNS-сервера, чтобы запросы к домену успешно обрабатывались ingress-nginx"
+
+deploy-prometheus:
+  stage: deploy-monitoring
+  script:
+    - cd infra/helm/monitoring-tools/prometheus
+    - cat values.yaml.tmpl | envsubst > values.yaml
+    - helm upgrade --install --atomic --namespace momo-store prometheus prometheus-community/prometheus -f values.yaml
+
+deploy-grafana:
+  stage: deploy-monitoring
+  script:
+    - cd infra/helm/monitoring-tools/grafana
+    - cat values.yaml.tmpl | envsubst > values.yaml
+    - helm upgrade --install --atomic --namespace momo-store grafana ./ -f values.yaml
