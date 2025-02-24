@@ -1,9 +1,8 @@
 stages:
-  - create-k8s-cluster
-  - deploy-app-via-helm
+  - module-infra
 
 terraform:
-  stage: create-k8s-cluster
+  stage: module-infra
   trigger:
     include:
       - "/infra/terraform/.gitlab-ci.yml"
@@ -13,7 +12,7 @@ terraform:
       - infra/terraform/**/*
 
 helm:
-  stage: deploy-app-via-helm
+  stage: module-infra
   trigger:
     include:
       - "/infra/helm/.gitlab-ci.yml"

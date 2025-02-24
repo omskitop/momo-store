@@ -2,6 +2,13 @@
 
 <img width="900" alt="image" src="https://user-images.githubusercontent.com/9394918/167876466-2c530828-d658-4efe-9064-825626cc6db5.png">
 
+# Ссылки
+[omskitop.ru](https://omskitop.ru) - развернутый momo-store
+
+[prometheus.omskitop.ru](https://prometheus.omskitop.ru) - развернутый prometheus
+
+[grafana.omskitop.ru](https://grafana.omskitop.ru) - развернутый grafana(дашборды в разработке)
+
 # CI/CD
 - Код приложения и инфраструктуры находится в этом репозитории для простоты и удобства.
 - Развертывание инфраструктуры и приложения выполняется через Gitlab CI/CD pipeline.
