@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.partOf }}-{{ .Values.name }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.partOf }}-{{ .Values.name }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      protocol: {{ .Values.service.protocol }}
+      targetPort: {{ .Values.service.targetPort }}
+  selector:
+    app.kubernetes.io/name: {{ .Values.partOf }}-{{ .Values.name }}

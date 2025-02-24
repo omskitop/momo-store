@@ -1,0 +1,95 @@
+stages:
+  - release-chart
+  - deploy-app
+  - deploy-monitoring
+
+
+variables:
+  APP_CHART_NAME: "momo-store-chart"
+  NEXUS_REPO_NAME: "momo-store-helm-std-032-63"
+  CHART_DIR: "infra/helm/${APP_CHART_NAME}"
+
+image:
+  name: alpine/k8s:1.29.13
+  entrypoint: [""]
+
+before_script:
+  - curl -f -s -LO https://storage.yandexcloud.net/yandexcloud-yc/install.sh
+  - bash install.sh -i /usr/local/yandex-cloud -n
+  - ln -s /usr/local/yandex-cloud/bin/yc /usr/local/bin/yc
+  - echo ${YC_KEY} > /tmp/sa-key.json
+  - yc config profile create sa-profile
+  - yc config set service-account-key /tmp/sa-key.json
+  - yc config set cloud-id ${YC_CLOUD_ID}
+  - yc config set folder-id ${YC_FOLDER_ID}
+  - yc managed-kubernetes cluster get-credentials ${CLUSTER_NAME} --external
+  - export KUBECONFIG=/root/.kube/config
+  - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+  - helm repo add jetstack https://charts.jetstack.io
+  - helm repo add ${NEXUS_REPO_NAME} ${NEXUS_REPO_URL}/${NEXUS_REPO_NAME} --username ${NEXUS_USER} --password ${NEXUS_PASSWORD}
+  - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+  - helm repo add grafana https://grafana.github.io/helm-charts
+  - helm repo update
+
+upload-chart:
+  stage: release-chart
+  script:
+    - cd ${CHART_DIR}
+    - helm package .
+    - curl -u ${NEXUS_USER}:${NEXUS_PASSWORD} --upload-file *.tgz "${NEXUS_REPO_URL}${NEXUS_REPO_NAME}"
+
+deploy-infrastructure:
+  stage: deploy-app
+  when: manual
+  script:
+    - |
+      helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+      --namespace ingress-nginx \
+      --create-namespace \
+      --version 4.12.0 \
+      --set controller.service.type=LoadBalancer \
+      --set controller.image.tag="v1.12.0" \
+      --set controller.service.annotations."yandex\.cloud/load-balancer-type"=external
+    - |
+      helm upgrade --install cert-manager jetstack/cert-manager \
+      --namespace cert-manager \
+      --create-namespace \
+      --version v1.17.1 \
+      --set crds.enabled=true
+
+deploy-application:
+  stage: deploy-app
+  script:
+    - cd ${CHART_DIR}
+    - |
+      envsubst '
+        $DOCKER_REPO_BACKEND
+        $DOCKER_REPO_FRONTEND
+        $FQDN
+        $ADMIN_EMAIL
+        $DOCKER_CONFIG_JSON
+      ' < values.yaml.tmpl > values.yaml
+    - |
+      helm upgrade --install --atomic --namespace momo-store --create-namespace \
+      ${APP_CHART_NAME} ${NEXUS_REPO_NAME}/${APP_CHART_NAME} -f values.yaml
+    - echo "External IP для ingress:"
+    - kubectl get svc -n ingress-nginx -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}'
+    - echo "FQDN для ingress:"
+    - echo ${FQDN}
+    - echo "Полученный IP необходимо прописать в A-запись DNS-сервера, чтобы запросы к домену успешно обрабатывались ingress-nginx"
+
+deploy-prometheus:
+  stage: deploy-monitoring
+  when: manual
+  script:
+    - cd infra/helm/monitoring-tools/prometheus
+    - cat values.yaml.tmpl | envsubst > values.yaml
+    - helm upgrade --install --atomic --namespace momo-store prometheus prometheus-community/prometheus -f values.yaml
+
+deploy-grafana:
+  stage: deploy-monitoring
+  when: manual
+  script:
+    - cd infra/helm/monitoring-tools/grafana
+    - cat values.yaml.tmpl | envsubst > values.yaml
+    - helm upgrade --install --atomic --namespace momo-store grafana ./ -f values.yaml

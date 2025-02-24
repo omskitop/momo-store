@@ -36,4 +36,10 @@ npm-debug.log
 yarn-error.log
 
 # Backup files
-*.bak
+*.bak\
+
+# helm
+values.yaml
+*.tgz
+
+.env

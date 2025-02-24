@@ -2,9 +2,32 @@
 
 <img width="900" alt="image" src="https://user-images.githubusercontent.com/9394918/167876466-2c530828-d658-4efe-9064-825626cc6db5.png">
 
----
+# CI/CD
+- Код приложения и инфраструктуры находится в этом репозитории для простоты и удобства.
+- Развертывание инфраструктуры и приложения выполняется через Gitlab CI/CD pipeline.
+- Pipeline модульный и при изменении кода в соответствующих директориях тригеррятся модули, выполняющие соответствующие джобы.
+- Все этапы CI/CD описаны в файле .gitlab-ci.yml и максимально упрощены, т.к. простой код легче поддерживать. При необходимости всегда можно добавить дополнительные этапы и джобы.
+- Для внесения изменений в код используется git-flow с основной веткой master, в которую сливаются ветки, содержащие завершенные изменения по задачам.
+
+# Версионирование
+- Используется стандарт SemVer 2.0.0
+- Мажорные и минорные версии приложения изменяются вручную в backend/.gitlab-ci.yaml и frontend/.gitlab-ci.yaml через переменную VERSION
+- Патч-версии приложения изменяются автоматически на основе переменной CI_PIPELINE_ID.
+- Версия приложения в чарте меняется вручную
+
+# Инфраструктура
+- Код хранится в [gitlab](https://gitlab.praktikum-services.ru/std-032-63/momo-store)
+- Образы docker в [gitlab container registry](https://gitlab.praktikum-services.ru/std-032-63/momo-store/container_registry)
+- Helm-чарты в [nexus](http://nexus.praktikum-services.tech/repository/momo-store-helm-std-032-63/)
+- K8s кластер в [yandex managed service for kubernetes](https://cloud.yandex.ru/services/managed-kubernetes)
+- Terraform state и статика фронтенда в [yandex object storage](https://yandex.cloud/ru/services/storage)
+- Мониторинг приложения можно выполнять с помощью просмотра метрик через prometheus, в планах настроить графики в grafana.
+- Логирование приложения планируется выполнять с помощью loki-stack и выводить в grafana, в разработке.
+
+### В директориях infra/helm и infra/terraform находится дополнительная информация по развертыванию инфраструктуры и приложения.
+
+# Запуск приложения локально
 ## Docker 
-Execute from root directory:
 ```bash
 #build&run
 docker network create momo-store-net && \
@@ -19,7 +42,7 @@ docker run -d --rm -p 8080:8080 --network momo-store-net --name momo-store-front
 docker stop momo-store-backend-1 momo-store-frontend-1 && \
 docker network remove momo-store-net
 ```
-Or use docker compose from root directory:
+## Docker Compose
 ```bash
 #build&run
 docker compose up -d
@@ -29,61 +52,3 @@ docker compose up -d
 #stop&cleanup
 docker compose down
 ```
----
-
-# K8S cluster creation
-
-Deployment of the Kubernetes cluster is performed using Terraform via CI/CD. The `deploy` job is triggered manually. The state of all Terraform objects is stored in S3.
-
-### Dependencies
-
-- **Terraform**: `version >= 1.5.7`
-- **Yandex Cloud Provider**: `version >= 0.87.0`
-- **Gitlab**: `16.11.10 <= version < 18.0`
-- **kubectl**: `version = 1.29.0`
-
-### Gitlab CI/CD Variables:
-
-`YC_KEY` - Static access key for the Yandex Cloud service account. The service account must be created in advance in the Yandex Cloud console and granted admin rights for the folder where the k8s cluster is planned to be deployed. The key can be obtained using the command:
-
-```bash
-yc iam key create --service-account-name <name> --output key.json
-```
-
-`YC_CLOUD_ID` - The ID of the cloud where the cluster will be created.
-
-`YC_FOLDER_ID` - The ID of the folder where the cluster will be created.
-
-`YC_BUCKET_ACCESS_KEY` - Access key for the S3 bucket where Terraform states will be stored. The bucket must be created via the Yandex Cloud console, and access must be granted to the service account.
-
-`YC_BUCKET_SECRET_KEY` - Secret access key for the S3 bucket.
-
-`CLUSTER_NAME` - The name of the cluster.
-
-### Output
-
-After successful cluster creation, the following data is output:
-
-`Cluster_IP_Adress` - External IP address of the cluster.
-
-`Cluster_ID` - Unique ID of the cluster.
-
-`Cluster_Name` - Name of the cluster.
-
-### Cluster connection
-
-After creating the cluster, connect to it using the command:
-
-```bash
-yc managed-kubernetes cluster get-credentials <cluster_name_or_id> --external
-```
-
-Next, verify that the configuration is correct:
-
-```bash
-kubectl cluster-info
-```
-
-### Cluster deletion
-
-To delete the cluster and all dependent resources, manually trigger the `cleanup` job.

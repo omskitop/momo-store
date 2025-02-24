@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.partOf }}-{{ .Values.name }}-nginx-conf
+data:
+  {{- range $key, $value := .Values.envs }}
+  {{ $key }}: |
+{{ $value | trim | indent 4 }}
+  {{- end }}
