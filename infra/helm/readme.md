@@ -44,9 +44,11 @@ helm upgrade --install --atomic grafana ./monitoring-tools/grafana \
   --namespace momo-store \
   --create-namespace \
   -f ./monitoring-tools/grafana/values.yaml
+# Пароль по умолчанию от Grafana admin\admin, необходимо его сменить при первом входе
 
-# Получить внешний IP для ingress-nginx необходимо прописать в A-запись DNS-сервера, чтобы запросы к домену успешно обрабатывались ingress-nginx
+# Получить внешний IP для ingress-nginx
 kubectl get svc -n ingress-nginx -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}'
+# Далее необходимо прописать в A-записи вида example.com, prometheus.example.com и grafana.example.com в настройках DNS-сервера, чтобы запросы к домену успешно обрабатывались ingress-nginx
 
 # Удаление
 helm uninstall ingress-nginx --namespace ingress-nginx && \
